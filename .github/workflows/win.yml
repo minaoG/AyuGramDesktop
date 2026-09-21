@@ -145,10 +145,14 @@ jobs:
           mkdir D:\BuildOut
           mklink /d %TBUILD%\%REPO_NAME%\out D:\BuildOut
 
-      - name: Disk space before build.
+      - name: Runner resources before build.
         if: env.ONLY_CACHE == 'false'
         shell: pwsh
-        run: Get-PSDrive -PSProvider FileSystem | Select-Object Name,@{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}},@{n='UsedGB';e={[math]::Round($_.Used/1GB,1)}} | Format-Table -AutoSize | Out-String -Width 80
+        run: |
+          "Logical processors: $env:NUMBER_OF_PROCESSORS"
+          "RAM GB: " + [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB,1)
+          Get-CimInstance Win32_PageFileUsage | Select-Object Name,AllocatedBaseSize,CurrentUsage | Format-Table -AutoSize | Out-String -Width 100
+          Get-PSDrive -PSProvider FileSystem | Select-Object Name,@{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}},@{n='UsedGB';e={[math]::Round($_.Used/1GB,1)}} | Format-Table -AutoSize | Out-String -Width 80
 
       - name: AyuGram build.
         if: env.ONLY_CACHE == 'false'
@@ -156,7 +160,7 @@ jobs:
           cd %TBUILD%\%REPO_NAME%\Telegram
 
           call configure.bat ^
-          x64 ^
+          -G "Ninja Multi-Config" ^
           qt6 ^
           %TDESKTOP_BUILD_API% ^
           -D CMAKE_CONFIGURATION_TYPES=%BUILD_TYPE% ^
@@ -165,7 +169,7 @@ jobs:
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF
 
-          cmake --build ..\out --config %BUILD_TYPE% --parallel
+          cmake --build ..\out --config %BUILD_TYPE% --parallel 2
 
       - name: Move artifact.
         if: (env.ONLY_CACHE == 'false') && (env.UPLOAD_ARTIFACT == 'true')

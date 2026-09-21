@@ -7,8 +7,10 @@
 #include "ayu/ui/settings/settings_other.h"
 
 #include "lang_auto.h"
+#include "logs.h"
 #include "ayu/ayu_settings.h"
 #include "ayu/ui/boxes/donate_qr_box.h"
+#include "ayu/ui/boxes/gift_render_inspector.h"
 #include "ayu/ui/settings/ayu_builder.h"
 #include "ayu/ui/settings/settings_ayu_utils.h"
 #include "ayu/ui/settings/settings_main.h"
@@ -225,6 +227,28 @@ void BuildOtherThings(SectionBuilder &builder) {
 	builder.addSkip();
 }
 
+// Internal QA tooling. Only built into the section when the client runs
+// with debug logging enabled, so it stays out of regular builds.
+void BuildDeveloperTools(SectionBuilder &builder) {
+	if (!Logs::DebugEnabled()) {
+		return;
+	}
+	const auto controller = builder.controller();
+
+	builder.addSkip();
+	builder.addButton({
+		.id = u"ayu/giftRenderInspector"_q,
+		.title = rpl::single(u"Gift render inspector"_q),
+		.icon = { &st::menuIconGiftPremium },
+		.onClick = [=] {
+			if (controller) {
+				AyuUi::ShowGiftRenderInspector(controller);
+			}
+		},
+	});
+	builder.addSkip();
+}
+
 const auto kMeta = BuildHelper({
 	.id = AyuOther::Id(),
 	.parentId = AyuMain::Id(),
@@ -237,6 +261,7 @@ const auto kMeta = BuildHelper({
 	BuildDonations(builder);
 	BuildCrashReporting(builder, ayu);
 	BuildOtherThings(builder);
+	BuildDeveloperTools(builder);
 });
 
 } // namespace

@@ -140,6 +140,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_ayu_icons.h"
 #include "ayu/ui/context_menu/context_menu.h"
 #include "ayu/features/forward/ayu_forward.h"
+#include "ayu/ui/boxes/gift_render_inspector.h"
 
 
 namespace Window {
@@ -340,6 +341,7 @@ private:
 	void addDeleteContact();
 	void addTTLSubmenu(bool addSeparator);
 	void addSendGift();
+	void addGiftRenderInspector();
 	void addCreateTopic();
 	void addViewAsMessages();
 	void addViewAsTopics();
@@ -1650,6 +1652,16 @@ void Filler::addSendGift() {
 	}, &st::menuIconGiftPremium);
 }
 
+// AyuGram: opens the local star gift render inspector, which draws the gift
+// service plate through the regular HistoryView pipeline without sending
+// anything to the server.
+void Filler::addGiftRenderInspector() {
+	const auto controller = _controller;
+	_addAction(u"Предпросмотр подарка"_q, [=] {
+		AyuUi::ShowGiftRenderInspector(controller);
+	}, &st::menuIconGiftPremium);
+}
+
 void Filler::fill() {
 	if (_folder) {
 		fillArchiveActions();
@@ -1909,6 +1921,7 @@ void Filler::fillProfileActions() {
 	addBotToGroup();
 	addNewMembers();
 	addSendGift();
+	addGiftRenderInspector();
 	addViewStatistics();
 	addStoryArchive();
 	addManageChat();

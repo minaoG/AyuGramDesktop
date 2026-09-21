@@ -167,7 +167,8 @@ jobs:
           -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF ^
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
+          -D CMAKE_EXE_LINKER_FLAGS=Dnsapi.lib
 
           cmake --build ..\out --config %BUILD_TYPE% --parallel 2
 

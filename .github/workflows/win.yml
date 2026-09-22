@@ -83,12 +83,20 @@ jobs:
           Write-Host "Visual Studio: $vs"
           $atl = Join-Path $vs 'VC\atlmfc\include\atlbase.h'
           if (Test-Path $atl) { Write-Host "ATL already present"; exit 0 }
-          $argline = 'modify --installPath "{0}" --add Microsoft.VisualStudio.Component.VC.ATL --quiet --norestart --nocache' -f $vs
+          $argline = 'modify --installPath "{0}" --add Microsoft.VisualStudio.Component.VC.ATL --quiet --wait --norestart --nocache' -f $vs
           Write-Host "args: $argline"
           $p = Start-Process -FilePath "$dir\vs_installer.exe" -Wait -PassThru -ArgumentList $argline
           Write-Host "installer exit code: $($p.ExitCode)"
           if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { exit $p.ExitCode }
-          if (-not (Test-Path $atl)) { throw "atlbase.h is still missing at $atl" }
+          $deadline = (Get-Date).AddMinutes(5)
+          while (-not (Test-Path $atl) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 15 }
+          if (-not (Test-Path $atl)) {
+            Write-Host "--- atlmfc directory ---"
+            Get-ChildItem (Join-Path $vs 'VC') -ErrorAction SilentlyContinue | Select-Object Name | Out-String
+            Write-Host "--- any atlbase.h under VS ---"
+            Get-ChildItem $vs -Recurse -Filter atlbase.h -ErrorAction SilentlyContinue | Select-Object -First 5 FullName | Out-String
+            throw "atlbase.h is still missing at $atl"
+          }
           Write-Host "ATL installed: $atl"
 
       - uses: Eden-CI/msvc-dev-cmd@master

@@ -30,6 +30,7 @@ jobs:
       ONLY_CACHE: ${{ inputs.only_cache && 'true' || 'false' }}
       BUILD_TYPE: ${{ inputs.build_type || 'Debug' }}
       PREPARE_PATH: "Telegram/build/prepare/prepare.py"
+      LIBS_VARIANT: ${{ (inputs.build_type || 'Debug') == 'Release' && 'rel' || 'dbg' }}
 
     defaults:
       run:
@@ -104,7 +105,7 @@ jobs:
             !${{ env.LibrariesPath }}\[qQ]t[_-]*
             ${{ env.LibrariesPath }}\cache_keys\*
             !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
-          key: ${{ runner.OS }}-x64-libs-v2-${{ env.CACHE_KEY }}
+          key: ${{ runner.OS }}-x64-libs-v2-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
           restore-keys: ${{ runner.OS }}-x64-libs-v2-
 
       - name: Qt cache.
@@ -114,12 +115,12 @@ jobs:
           path: |
             ${{ env.LibrariesPath }}\[qQ]t[_-]*
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
-          key: ${{ runner.OS }}-x64-qt6-${{ env.CACHE_KEY }}
+          key: ${{ runner.OS }}-x64-qt6-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
           restore-keys: ${{ runner.OS }}-x64-qt6-
 
       - name: Libraries.
         run: |
-          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent qt6
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat ${{ (inputs.build_type || 'Debug') == 'Debug' && 'skip-release' || '' }} silent qt6
 
       - name: Resolve API credentials.
         shell: bash

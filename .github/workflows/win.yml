@@ -39,8 +39,7 @@ jobs:
     steps:
       - name: Prepare directories.
         run: |
-          mkdir %userprofile%\TBuild\Libraries
-          mklink /d %GITHUB_WORKSPACE%\TBuild %userprofile%\TBuild
+          mkdir %GITHUB_WORKSPACE%\TBuild\Libraries
           echo TBUILD=%GITHUB_WORKSPACE%\TBuild>>%GITHUB_ENV%
           echo LibrariesPath=%GITHUB_WORKSPACE%\TBuild\Libraries\win64>>%GITHUB_ENV%
 
@@ -92,8 +91,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ env.TBUILD }}\ThirdParty
-          key: ${{ runner.OS }}-${{ runner.arch }}-third-party-${{ env.CACHE_KEY }}
-          restore-keys: ${{ runner.OS }}-${{ runner.arch }}-third-party-
+          key: ${{ runner.OS }}-${{ runner.arch }}-third-party-v2-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-${{ runner.arch }}-third-party-v2-
 
       - name: Libraries cache.
         id: cache-libs
@@ -105,8 +104,8 @@ jobs:
             !${{ env.LibrariesPath }}\[qQ]t[_-]*
             ${{ env.LibrariesPath }}\cache_keys\*
             !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
-          key: ${{ runner.OS }}-x64-libs-v2-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
-          restore-keys: ${{ runner.OS }}-x64-libs-v2-
+          key: ${{ runner.OS }}-x64-libs-v3-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-x64-libs-v3-
 
       - name: Qt cache.
         id: cache-qt
@@ -115,8 +114,8 @@ jobs:
           path: |
             ${{ env.LibrariesPath }}\[qQ]t[_-]*
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
-          key: ${{ runner.OS }}-x64-qt6-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
-          restore-keys: ${{ runner.OS }}-x64-qt6-
+          key: ${{ runner.OS }}-x64-qt6-v2-${{ env.LIBS_VARIANT }}-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-x64-qt6-v2-
 
       - name: Libraries.
         run: |
@@ -139,12 +138,6 @@ jobs:
       - name: Free up some disk space.
         shell: bash
         run: find $LibrariesPath '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -name '*.pc' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' -o -path '*/nv-codec-headers/*' ')' -type f ')' -o -empty ')' -delete
-
-      - name: Redirect the build tree to the large drive.
-        if: env.ONLY_CACHE == 'false'
-        run: |
-          mkdir D:\BuildOut
-          mklink /d %TBUILD%\%REPO_NAME%\out D:\BuildOut
 
       - name: Runner resources before build.
         if: env.ONLY_CACHE == 'false'

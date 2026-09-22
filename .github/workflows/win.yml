@@ -178,7 +178,7 @@ jobs:
           set OUT=%TBUILD%\%REPO_NAME%\out\%BUILD_TYPE%
           mkdir artifact
           move %OUT%\AyuGram.exe artifact/
-          move %OUT%\Updater.exe artifact/
+          if exist %OUT%\Updater.exe move %OUT%\Updater.exe artifact/
 
       - uses: actions/upload-artifact@v7
         name: Upload artifact.
@@ -187,3 +187,4 @@ jobs:
           name: AyuGram-x64-qt6-${{ env.BUILD_TYPE }}
           path: artifact\
           retention-days: 7
+          if-no-files-found: error

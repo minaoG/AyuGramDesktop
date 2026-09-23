@@ -374,7 +374,7 @@ void RenderLocalGiftPreview(
 		tr::now,
 		lt_cost,
 		cost,
-		tr::marked);
+		Ui::Text::WithEntities);
 
 	// MessageFlag::Local keeps the item out of storage and off the wire;
 	// addNewLocalMessage() requires it and asserts on anything else.

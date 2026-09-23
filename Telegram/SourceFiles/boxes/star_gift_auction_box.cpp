@@ -1472,7 +1472,8 @@ void AuctionInfoBox(
 			peer,
 			nullptr,
 			GiftTypeStars{ .info = *state->value.current().gift },
-			state->value.value()));
+			state->value.value(),
+			false));
 		sendBox->boxClosing(
 		) | rpl::on_next([=] {
 			box->closeBox();
@@ -1523,7 +1524,8 @@ base::weak_qptr<BoxContent> ChooseAndShowAuctionBox(
 				Info::PeerGifts::GiftTypeStars{
 					.info = *current.gift,
 				},
-				state->value()));
+				state->value(),
+				false));
 			sendBox->boxClosing(
 			) | rpl::on_next(close, sendBox->lifetime());
 		};

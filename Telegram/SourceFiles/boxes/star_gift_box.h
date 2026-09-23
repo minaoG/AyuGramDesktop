@@ -200,7 +200,7 @@ void SendGiftBox(
 	std::shared_ptr<Api::PremiumGiftCodeOptions> api,
 	const Info::PeerGifts::GiftDescriptor &descriptor,
 	rpl::producer<Data::GiftAuctionState> auctionState,
-	bool preview = false);
+	bool preview); // Box() forwards verbatim, so pass this explicitly.
 
 [[nodiscard]] Data::CreditsHistoryEntry EntryForUpgradedGift(
 	const std::shared_ptr<Data::GiftUpgradeResult> &gift,

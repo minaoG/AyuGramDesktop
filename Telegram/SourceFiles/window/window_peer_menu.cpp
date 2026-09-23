@@ -1652,13 +1652,14 @@ void Filler::addSendGift() {
 	}, &st::menuIconGiftPremium);
 }
 
-// AyuGram: opens the local star gift render inspector, which draws the gift
-// service plate through the regular HistoryView pipeline without sending
-// anything to the server.
+// AyuGram: opens the regular star gift catalog in preview mode. Picking a
+// gift and pressing send renders a local-only service message in the chat
+// instead of paying for anything, so the recipient sees nothing.
 void Filler::addGiftRenderInspector() {
 	const auto controller = _controller;
+	const auto peer = _peer;
 	_addAction(u"Предпросмотр подарка"_q, [=] {
-		AyuUi::ShowGiftRenderInspector(controller);
+		AyuUi::StartGiftPreview(controller, peer);
 	}, &st::menuIconGiftPremium);
 }
 

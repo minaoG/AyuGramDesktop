@@ -6,6 +6,8 @@
 // Copyright @Radolyn, 2026
 #include "ayu/ui/boxes/gift_render_inspector.h"
 
+#include "boxes/star_gift_box.h"
+
 #include "lang_auto.h"
 #include "api/api_premium.h"
 #include "base/unixtime.h"
@@ -328,6 +330,66 @@ void GiftRenderInspectorBox(
 }
 
 } // namespace
+
+void StartGiftPreview(
+		not_null<Window::SessionController*> controller,
+		not_null<PeerData*> peer) {
+	Ui::ShowStarGiftBox(controller, peer, true);
+}
+
+void RenderLocalGiftPreview(
+		not_null<Window::SessionController*> controller,
+		not_null<PeerData*> peer,
+		const Data::StarGift &gift,
+		const TextWithEntities &message) {
+	const auto session = &controller->session();
+	const auto history = session->data().history(peer);
+	const auto self = session->user();
+
+	// Same GiftCode population as the messageActionStarGift branch of
+	// HistoryItem::applyAction, sourced from the catalog entry rather than
+	// from a server update.
+	auto fields = Data::GiftCode{
+		.stargiftId = gift.id,
+		.document = gift.document,
+		.stargiftReleasedBy = gift.releasedBy,
+		.unique = gift.unique,
+		.message = message,
+		.starsConverted = int(gift.starsConverted),
+		.starsToUpgrade = int(gift.starsToUpgrade),
+		.limitedCount = gift.limitedCount,
+		.limitedLeft = gift.limitedLeft,
+		.count = gift.stars,
+		.type = Data::GiftType::StarGift,
+		.upgradable = gift.upgradable,
+		.saved = true,
+	};
+
+	// MessageFlag::Local keeps the item out of storage and off the wire;
+	// addNewLocalMessage() requires it and asserts on anything else.
+	const auto item = history->makeMessage({
+		.id = session->data().nextLocalMessageId(),
+		.flags = (MessageFlag::Local
+			| MessageFlag::Outgoing
+			| MessageFlag::HasFromId),
+		.from = self->id,
+		.date = base::unixtime::now(),
+	}, PreparedServiceText{ { QString() } });
+
+	// The data-level media override makes the item own a real
+	// Data::MediaGiftBox, so Element::createView() builds the production
+	// HistoryView::ServiceBox + HistoryView::PremiumGift pair.
+	item->overrideMedia(std::make_unique<Data::MediaGiftBox>(
+		item,
+		self,
+		std::move(fields)));
+
+	history->addNewLocalMessage(item);
+
+	controller->showToast({
+		.text = { u"Preview only \u2014 nothing was sent."_q },
+	});
+}
 
 void ShowGiftRenderInspector(
 		not_null<Window::SessionController*> controller) {

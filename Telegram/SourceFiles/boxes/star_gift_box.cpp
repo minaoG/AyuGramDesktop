@@ -7,6 +7,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "boxes/star_gift_box.h"
 
+// AyuGram includes
+#include "ayu/ui/boxes/gift_render_inspector.h"
+
 #include "boxes/star_gift_cover_box.h"
 
 #include "apiwrap.h"
@@ -1643,7 +1646,8 @@ void AddBlock(
 
 [[nodiscard]] object_ptr<RpWidget> MakePremiumGifts(
 		not_null<Window::SessionController*> window,
-		not_null<PeerData*> peer) {
+		not_null<PeerData*> peer,
+		bool preview) {
 	struct State {
 		rpl::variable<PremiumGiftsDescriptor> gifts;
 	};
@@ -1662,6 +1666,7 @@ void AddBlock(
 		.window = window,
 		.peer = peer,
 		.gifts = std::move(gifts),
+		.preview = preview,
 	});
 	result->lifetime().add([state = std::move(state)] {});
 	return result;
@@ -1671,7 +1676,8 @@ void AddBlock(
 		not_null<Window::SessionController*> window,
 		not_null<PeerData*> peer,
 		MyGiftsDescriptor my,
-		Fn<void(int)> tabSelected) {
+		Fn<void(int)> tabSelected,
+		bool preview) {
 	auto result = object_ptr<VerticalLayout>((QWidget*)nullptr);
 
 	struct State {
@@ -1769,6 +1775,7 @@ void AddBlock(
 		.peer = peer,
 		.gifts = std::move(gifts),
 		.loadMore = loadMore,
+		.preview = preview,
 	}));
 
 	return result;
@@ -1778,7 +1785,8 @@ void GiftBox(
 		not_null<GenericBox*> box,
 		not_null<Window::SessionController*> window,
 		not_null<PeerData*> peer,
-		MyGiftsDescriptor my) {
+		MyGiftsDescriptor my,
+		bool preview) {
 	box->setWidth(st::boxWideWidth);
 	box->setStyle(st::creditsGiftBox);
 	box->setNoContentMargin(true);
@@ -1847,7 +1855,7 @@ void GiftBox(
 				tr::lng_gift_premium_features(tr::link),
 				tr::marked),
 			.aboutFilter = premiumClickHandlerFilter,
-			.content = MakePremiumGifts(window, peer),
+			.content = MakePremiumGifts(window, peer, preview),
 		});
 	}
 
@@ -1889,7 +1897,8 @@ void GiftBox(
 				window,
 				peer,
 				std::move(my),
-				std::move(tabSelected)),
+				std::move(tabSelected),
+				preview),
 		});
 	}
 }
@@ -2366,13 +2375,15 @@ void ChooseStarGiftRecipient(
 
 void ShowStarGiftBox(
 		not_null<Window::SessionController*> controller,
-		not_null<PeerData*> peer) {
+		not_null<PeerData*> peer,
+		bool preview) {
 	if (controller->showFrozenError()) {
 		return;
 	}
 
 	struct Session {
 		PeerData *peer = nullptr;
+		bool preview = false;
 		MyGiftsDescriptor my;
 		bool premiumGiftsReady = false;
 		bool starsGiftsReady = false;
@@ -2400,10 +2411,10 @@ void ShowStarGiftBox(
 	if (i == end(Map)) {
 		i = Map.emplace(session).first;
 		session->lifetime().add([=] { Map.remove(session); });
-	} else if (i->second.peer == peer) {
+	} else if (i->second.peer == peer && i->second.preview == preview) {
 		return;
 	}
-	i->second = Session{ .peer = peer };
+	i->second = Session{ .peer = peer, .preview = preview };
 
 	const auto weak = base::make_weak(controller);
 	const auto checkReady = [=] {
@@ -2431,7 +2442,7 @@ void ShowStarGiftBox(
 					return;
 				}
 			}
-			strong->show(Box(GiftBox, strong, peer, std::move(was.my)));
+			strong->show(Box(GiftBox, strong, peer, std::move(was.my), preview));
 		}
 	};
 
@@ -4457,6 +4468,7 @@ struct DefaultGiftHandlerState {
 	std::shared_ptr<Data::UniqueGift> transferRequested;
 	uint64 resaleRequestingId = 0;
 	rpl::lifetime resaleLifetime;
+	bool preview = false;
 
 	base::has_weak_ptr guard;
 };
@@ -4466,6 +4478,7 @@ void DefaultGiftHandler(
 		not_null<DefaultGiftHandlerState*> state,
 		Info::PeerGifts::GiftDescriptor descriptor) {
 	const auto star = std::get_if<GiftTypeStars>(&descriptor);
+	const auto preview = state->preview;
 	const auto send = crl::guard(&state->guard, [=] {
 		window->show(Box(
 			SendGiftBox,
@@ -4473,7 +4486,8 @@ void DefaultGiftHandler(
 			state->peer,
 			state->api,
 			descriptor,
-			nullptr));
+			nullptr,
+			preview));
 	});
 	const auto peer = state->peer;
 	const auto unique = star ? star->info.unique : nullptr;
@@ -4630,6 +4644,7 @@ object_ptr<RpWidget> MakeGiftsList(GiftsListArgs &&args) {
 		.handlerState = {
 			.window = window,
 			.peer = peer,
+			.preview = args.preview,
 		},
 	});
 	const auto single = state->delegate.buttonSize();
@@ -4808,7 +4823,8 @@ void SendGiftBox(
 		not_null<PeerData*> peer,
 		std::shared_ptr<Api::PremiumGiftCodeOptions> api,
 		const GiftDescriptor &descriptor,
-		rpl::producer<Data::GiftAuctionState> auctionState) {
+		rpl::producer<Data::GiftAuctionState> auctionState,
+		bool preview) {
 	const auto stars = std::get_if<GiftTypeStars>(&descriptor);
 	const auto auction = !!auctionState;
 	const auto limited = stars
@@ -5091,6 +5107,27 @@ void SendGiftBox(
 				strong->closeBox();
 			}
 		};
+		if (preview) {
+			// AyuGram: render the gift locally instead of paying for it.
+			// Nothing is sent, so the recipient never sees anything.
+			const auto stars = std::get_if<GiftTypeStars>(&details.descriptor);
+			if (stars) {
+				AyuUi::RenderLocalGiftPreview(
+					window,
+					peer,
+					stars->info,
+					details.text);
+			} else {
+				window->showToast(
+					u"Preview supports star gifts only."_q);
+			}
+			state->submitting = false;
+			window->showPeerHistory(peer);
+			if (const auto strong = weak.get()) {
+				strong->closeBox();
+			}
+			return;
+		}
 		SendGift(window, peer, api, details, done);
 	});
 	if (limited) {

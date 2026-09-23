@@ -74,9 +74,12 @@ void ChooseStarGiftRecipient(
 	not_null<Main::Session*> session,
 	const std::vector<UserId> &exclude = {});
 
+// `preview` opens the regular catalog but makes sending render a local
+// AyuGram-only service message instead of paying for a real gift.
 void ShowStarGiftBox(
 	not_null<Window::SessionController*> controller,
-	not_null<PeerData*> peer);
+	not_null<PeerData*> peer,
+	bool preview = false);
 
 void AddWearGiftCover(
 	not_null<VerticalLayout*> container,
@@ -186,6 +189,7 @@ struct GiftsListArgs {
 	std::vector<std::shared_ptr<Data::UniqueGift>> selected;
 	Fn<void()> loadMore;
 	Fn<void(Info::PeerGifts::GiftDescriptor)> handler;
+	bool preview = false;
 };
 [[nodiscard]] object_ptr<RpWidget> MakeGiftsList(GiftsListArgs &&args);
 
@@ -195,7 +199,8 @@ void SendGiftBox(
 	not_null<PeerData*> peer,
 	std::shared_ptr<Api::PremiumGiftCodeOptions> api,
 	const Info::PeerGifts::GiftDescriptor &descriptor,
-	rpl::producer<Data::GiftAuctionState> auctionState);
+	rpl::producer<Data::GiftAuctionState> auctionState,
+	bool preview = false);
 
 [[nodiscard]] Data::CreditsHistoryEntry EntryForUpgradedGift(
 	const std::shared_ptr<Data::GiftUpgradeResult> &gift,

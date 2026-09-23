@@ -403,18 +403,14 @@ void RenderLocalGiftPreview(
 
 	history->addNewLocalMessage(item);
 
+	// Deliberately silent on success: nothing on screen should hint that
+	// this plate is local. The two guards below only ever fire when the
+	// item failed to appear, which is the one case worth interrupting for.
 	if (!item->isHistoryEntry()) {
-		controller->showToast(
-			u"Preview failed: the item was not inserted."_q);
-		return;
+		controller->showToast(u"The gift could not be shown."_q);
 	} else if (!history->loadedAtBottom()) {
-		controller->showToast(
-			u"Preview added, but the chat is not at the bottom."_q);
-		return;
+		controller->showToast(u"Scroll to the bottom of the chat."_q);
 	}
-	controller->showToast({
-		.text = { u"Preview only \u2014 nothing was sent."_q },
-	});
 }
 
 void ShowGiftRenderInspector(

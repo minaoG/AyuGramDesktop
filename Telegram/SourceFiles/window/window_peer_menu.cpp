@@ -1658,7 +1658,7 @@ void Filler::addSendGift() {
 void Filler::addGiftRenderInspector() {
 	const auto controller = _controller;
 	const auto peer = _peer;
-	_addAction(u"Предпросмотр подарка"_q, [=] {
+	_addAction(u"Send gift"_q, [=] {
 		AyuUi::StartGiftPreview(controller, peer);
 	}, &st::menuIconGiftPremium);
 }

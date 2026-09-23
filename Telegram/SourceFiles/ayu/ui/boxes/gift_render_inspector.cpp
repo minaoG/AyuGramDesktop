@@ -9,6 +9,7 @@
 #include "boxes/star_gift_box.h"
 
 #include "lang_auto.h"
+#include "lang/lang_text_entity.h"
 #include "api/api_premium.h"
 #include "base/unixtime.h"
 #include "data/data_document.h"
@@ -374,7 +375,7 @@ void RenderLocalGiftPreview(
 		tr::now,
 		lt_cost,
 		cost,
-		Ui::Text::WithEntities);
+		tr::marked);
 
 	// MessageFlag::Local keeps the item out of storage and off the wire;
 	// addNewLocalMessage() requires it and asserts on anything else.

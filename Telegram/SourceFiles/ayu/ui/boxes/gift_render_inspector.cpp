@@ -29,6 +29,7 @@
 #include "styles/style_layers.h"
 #include "styles/style_settings.h"
 #include "ui/painter.h"
+#include "ui/text/text_utilities.h"
 #include "ui/rp_widget.h"
 #include "ui/vertical_list.h"
 #include "ui/chat/chat_style.h"
@@ -365,8 +366,22 @@ void RenderLocalGiftPreview(
 		.saved = true,
 	};
 
+	const auto cost = TextWithEntities{
+		tr::lng_action_gift_for_stars(tr::now, lt_count, gift.stars),
+	};
+	auto prepared = PreparedServiceText();
+	prepared.text = tr::lng_action_gift_sent(
+		tr::now,
+		lt_cost,
+		cost,
+		tr::marked);
+
 	// MessageFlag::Local keeps the item out of storage and off the wire;
 	// addNewLocalMessage() requires it and asserts on anything else.
+	//
+	// HistoryEntry, which History::addNewItem() insists on before it will
+	// insert anything, is added by FinalizeMessageFlags() in the shared
+	// HistoryItem constructor.
 	const auto item = history->makeMessage({
 		.id = session->data().nextLocalMessageId(),
 		.flags = (MessageFlag::Local
@@ -374,11 +389,13 @@ void RenderLocalGiftPreview(
 			| MessageFlag::HasFromId),
 		.from = self->id,
 		.date = base::unixtime::now(),
-	}, PreparedServiceText{ { QString() } });
+	}, std::move(prepared));
 
 	// The data-level media override makes the item own a real
 	// Data::MediaGiftBox, so Element::createView() builds the production
-	// HistoryView::ServiceBox + HistoryView::PremiumGift pair.
+	// HistoryView::ServiceBox + HistoryView::PremiumGift pair. This mirrors
+	// the _media assignment of the messageActionStarGift branch in
+	// HistoryItem::applyAction.
 	item->overrideMedia(std::make_unique<Data::MediaGiftBox>(
 		item,
 		self,
@@ -386,6 +403,15 @@ void RenderLocalGiftPreview(
 
 	history->addNewLocalMessage(item);
 
+	if (!item->isHistoryEntry()) {
+		controller->showToast(
+			u"Preview failed: the item was not inserted."_q);
+		return;
+	} else if (!history->loadedAtBottom()) {
+		controller->showToast(
+			u"Preview added, but the chat is not at the bottom."_q);
+		return;
+	}
 	controller->showToast({
 		.text = { u"Preview only \u2014 nothing was sent."_q },
 	});

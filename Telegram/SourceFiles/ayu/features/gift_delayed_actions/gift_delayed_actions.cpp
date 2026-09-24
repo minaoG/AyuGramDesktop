@@ -176,19 +176,10 @@ void GiftDelayedActions::onGiftDelayedAction(History *history) {
 		return;
 	}
 
-	// A client-side id, not nextNonHistoryEntryId(): ids from that range are
-	// meant for FakeHistoryItem previews that never enter the message list.
-	// With a client-side id the item is registered by History as a local
-	// message, so it goes into the feed now and is put back into it whenever
-	// the chat slice is reloaded, like the gift plate it follows.
-	//
-	// MessageFlag::Local, added by addNewLocalMessage(), keeps it in memory
-	// only: it is never stored, never sent, and is gone after a restart.
-	const auto self = history->session().user();
 	history->addNewLocalMessage({
 		.id = history->owner().nextLocalMessageId(),
-		.flags = (MessageFlag::Outgoing | MessageFlag::HasFromId),
-		.from = self->id,
+		.flags = MessageFlag::HasFromId,
+		.from = history->peer->id,
 		.date = base::unixtime::now(),
 	}, ParseReplyText(reply), MTP_messageMediaEmpty());
 }

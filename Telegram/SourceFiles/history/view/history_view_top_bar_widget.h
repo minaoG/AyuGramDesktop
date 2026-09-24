@@ -259,6 +259,7 @@ private:
 	object_ptr<Ui::IconButton> _menuToggle;
 	object_ptr<Ui::IconButton> _recentActions;
 	object_ptr<Ui::IconButton> _admins;
+	object_ptr<Ui::RpWidget> _testRepliesDot;
 	base::unique_qptr<Ui::PopupMenu> _menu;
 
 	object_ptr<RpWidget> _membersShowArea = { nullptr };

@@ -8723,6 +8723,16 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "ayu_CrashReportingDescription" = "When this option is enabled, you'll be prompted to send a report after the app crashes. You can decide whether to send it or not.";
 "ayu_ResetSettings" = "Reset Settings";
 "ayu_ResetSettingsConfirmation" = "Are you sure you want to reset **all** AyuGram preferences to their defaults?";
+"ayu_TestRepliesHeader" = "Test Replies";
+"ayu_TestRepliesImport" = "Load from .txt file";
+"ayu_TestRepliesReset" = "Mark all as unused";
+"ayu_TestRepliesClear" = "Clear phrases";
+"ayu_TestRepliesClearConfirmation" = "Remove all loaded test phrases?";
+"ayu_TestRepliesImported#one" = "{count} phrase loaded";
+"ayu_TestRepliesImported#other" = "{count} phrases loaded";
+"ayu_TestRepliesImportEmpty" = "No phrases found in this file.";
+"ayu_TestRepliesImportFailed" = "Could not read this file.";
+"ayu_TestRepliesDescription" = "The counter shows unused / total phrases. Separate phrases with an empty line, or put one per line. A dot appears in the chat header when fewer than 15 unused phrases are left.";
 "ayu_DisableColorfulCover" = "Disable adaptive color";
 "ayu_EnableColorfulCover" = "Enable adaptive color";
 "ayu_CustomizationHeader" = "Customization";

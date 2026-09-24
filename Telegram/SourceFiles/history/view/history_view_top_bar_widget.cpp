@@ -73,6 +73,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/ayu_settings.h"
+#include "ayu/features/test_replies/test_replies_manager.h"
 #include "boxes/peers/edit_participants_box.h"
 #include "data/data_chat_filters.h"
 #include "history/admin_log/history_admin_log_section.h"
@@ -139,6 +140,7 @@ TopBarWidget::TopBarWidget(
 , _menuToggle(this, st::topBarMenuToggle)
 , _recentActions(this, st::topBarRecentActions)
 , _admins(this, st::topBarAdmins)
+, _testRepliesDot(this)
 , _titlePeerText(st::windowMinWidth / 3)
 , _onlineUpdater([=] { updateOnlineDisplay(); }) {
 	setAttribute(Qt::WA_OpaquePaintEvent);
@@ -192,6 +194,28 @@ TopBarWidget::TopBarWidget(
 	AyuSettings::getInstance().quickAdminShortcutsChanges(
 	) | rpl::on_next([=](bool) {
 		updateControlsVisibility();
+	}, lifetime());
+
+	_testRepliesDot->resize(st::topBarTestRepliesDotWidth, st::topBarHeight);
+	_testRepliesDot->setAttribute(Qt::WA_TransparentForMouseEvents);
+	_testRepliesDot->hide();
+	_testRepliesDot->paintRequest(
+	) | rpl::on_next([=] {
+		auto p = QPainter(_testRepliesDot.data());
+		auto hq = PainterHighQualityEnabler(p);
+		const auto size = st::topBarTestRepliesDotSize;
+		p.setPen(Qt::NoPen);
+		p.setBrush(st::attentionButtonFg);
+		p.drawEllipse(
+			(_testRepliesDot->width() - size) / 2,
+			(_testRepliesDot->height() - size) / 2,
+			size,
+			size);
+	}, _testRepliesDot->lifetime());
+	TestRepliesManager::Instance().runningLowValue(
+	) | rpl::on_next([=] {
+		updateControlsVisibility();
+		update();
 	}, lifetime());
 
 	_back->setAcceptBoth();
@@ -1329,6 +1353,11 @@ void TopBarWidget::updateControlsGeometry() {
 		_rightTaken += _search->width() + st::topBarCallSkip;
 	}
 
+	_testRepliesDot->moveToRight(_rightTaken, otherButtonsTop);
+	if (!_testRepliesDot->isHidden()) {
+		_rightTaken += _testRepliesDot->width();
+	}
+
 	updateMembersShowArea();
 }
 
@@ -1477,6 +1506,9 @@ void TopBarWidget::updateControlsVisibility() {
 		return false;
 	}();
 	_admins->setVisible(showAdmins);
+	_testRepliesDot->setVisible(TestRepliesManager::Instance().isRunningLow()
+		&& (section != Section::ChatsList)
+		&& !_chooseForReportReason);
 
 	const auto callsEnabled = [&] {
 		if (const auto peer = _activeChat.key.peer()) {

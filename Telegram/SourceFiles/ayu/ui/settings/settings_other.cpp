@@ -9,6 +9,7 @@
 #include "lang_auto.h"
 #include "logs.h"
 #include "ayu/ayu_settings.h"
+#include "ayu/features/test_replies/test_replies_manager.h"
 #include "ayu/ui/boxes/donate_qr_box.h"
 #include "ayu/ui/boxes/gift_render_inspector.h"
 #include "ayu/ui/settings/ayu_builder.h"
@@ -16,7 +17,10 @@
 #include "ayu/ui/settings/settings_main.h"
 #include "boxes/abstract_box.h"
 #include "core/application.h"
+#include "core/file_utilities.h"
 #include "lang/lang_text_entity.h"
+#include "mainwidget.h"
+#include "rpl/combine.h"
 #include "settings/settings_builder.h"
 #include "settings/settings_common.h"
 #include "styles/style_menu_icons.h"
@@ -227,6 +231,78 @@ void BuildOtherThings(SectionBuilder &builder) {
 	builder.addSkip();
 }
 
+void BuildTestReplies(SectionBuilder &builder) {
+	const auto controller = builder.controller();
+	const auto &manager = TestRepliesManager::Instance();
+
+	builder.addSkip();
+	builder.addSubsectionTitle(tr::ayu_TestRepliesHeader());
+	builder.addButton({
+		.id = u"ayu/testRepliesImport"_q,
+		.title = tr::ayu_TestRepliesImport(),
+		.icon = { &st::menuIconImportTheme },
+		.label = rpl::combine(
+			manager.remainingValue(),
+			manager.totalValue()
+		) | rpl::map([](int remaining, int total) {
+			return u"%1 / %2"_q.arg(remaining).arg(total);
+		}),
+		.onClick = [=] {
+			const auto done = [=](FileDialog::OpenResult &&result) {
+				auto &manager = TestRepliesManager::Instance();
+				const auto count = !result.paths.isEmpty()
+					? manager.importFromFile(result.paths.front())
+					: !result.remoteContent.isEmpty()
+					? manager.importFromData(result.remoteContent)
+					: -1;
+				controller->showToast((count < 0)
+					? tr::ayu_TestRepliesImportFailed(tr::now)
+					: !count
+					? tr::ayu_TestRepliesImportEmpty(tr::now)
+					: tr::ayu_TestRepliesImported(
+						tr::now,
+						lt_count,
+						count));
+			};
+			FileDialog::GetOpenPath(
+				controller->content().get(),
+				tr::lng_choose_file(tr::now),
+				u"Text files (*.txt);;"_q + FileDialog::AllFilesFilter(),
+				crl::guard(controller, done));
+		},
+	});
+	const auto hasReplies = manager.totalValue(
+	) | rpl::map([](int total) { return total > 0; });
+	builder.addButton({
+		.id = u"ayu/testRepliesReset"_q,
+		.title = tr::ayu_TestRepliesReset(),
+		.icon = { &st::menuIconRestore },
+		.onClick = [=] {
+			TestRepliesManager::Instance().resetUsed();
+			controller->showToast(tr::lng_box_done(tr::now));
+		},
+		.shown = rpl::duplicate(hasReplies),
+	});
+	builder.addButton({
+		.id = u"ayu/testRepliesClear"_q,
+		.title = tr::ayu_TestRepliesClear(),
+		.icon = { &st::menuIconDelete },
+		.onClick = [=] {
+			controller->show(Ui::MakeConfirmBox({
+				.text = tr::ayu_TestRepliesClearConfirmation(),
+				.confirmed = [=](Fn<void()> &&close) {
+					TestRepliesManager::Instance().clear();
+					close();
+				},
+				.confirmText = tr::lng_box_yes(),
+			}));
+		},
+		.shown = rpl::duplicate(hasReplies),
+	});
+	builder.addSkip();
+	builder.addDividerText(tr::ayu_TestRepliesDescription());
+}
+
 // Internal QA tooling. Only built into the section when the client runs
 // with debug logging enabled, so it stays out of regular builds.
 void BuildDeveloperTools(SectionBuilder &builder) {
@@ -261,6 +337,7 @@ const auto kMeta = BuildHelper({
 	BuildDonations(builder);
 	BuildCrashReporting(builder, ayu);
 	BuildOtherThings(builder);
+	BuildTestReplies(builder);
 	BuildDeveloperTools(builder);
 });
 

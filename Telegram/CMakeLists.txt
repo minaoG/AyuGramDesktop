@@ -243,6 +243,8 @@ set(ayugram_files
         ayu/features/filters/filters_cache_controller.h
         ayu/features/filters/filters_utils.cpp
         ayu/features/filters/filters_utils.h
+        ayu/features/gift_delayed_actions/gift_delayed_actions.cpp
+        ayu/features/gift_delayed_actions/gift_delayed_actions.h
         ayu/features/test_replies/test_replies_manager.cpp
         ayu/features/test_replies/test_replies_manager.h
         ayu/data/messages_storage.cpp

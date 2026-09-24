@@ -6,6 +6,7 @@
 // Copyright @Radolyn, 2026
 #include "ayu/ui/boxes/gift_render_inspector.h"
 
+#include "ayu/features/gift_delayed_actions/gift_delayed_actions.h"
 #include "boxes/star_gift_box.h"
 
 #include "lang_auto.h"
@@ -409,7 +410,10 @@ void RenderLocalGiftPreview(
 	// item failed to appear, which is the one case worth interrupting for.
 	if (!item->isHistoryEntry()) {
 		controller->showToast(u"The gift could not be shown."_q);
-	} else if (!history->loadedAtBottom()) {
+		return;
+	}
+	GiftDelayedActions::For(session).schedule(history);
+	if (!history->loadedAtBottom()) {
 		controller->showToast(u"Scroll to the bottom of the chat."_q);
 	}
 }
